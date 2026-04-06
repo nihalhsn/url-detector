@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Training - PhishGuard Pro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8;
+            --success: #10b981; --warning: #f59e0b; --danger: #ef4444;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-300: #d1d5db; --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo { 
+            display: flex; align-items: center; gap: 0.75rem;
+            font-size: 1.25rem; font-weight: 700; color: var(--gray-900);
+        }
+        .logo i { color: var(--primary); font-size: 1.5rem; }
+        
+        .nav { display: flex; gap: 1rem; align-items: center; }
+        .nav a {
+            color: #6b7280; text-decoration: none; padding: 0.5rem 1rem;
+            border-radius: 6px; font-size: 0.875rem; font-weight: 500;
+            display: flex; align-items: center; gap: 0.5rem;
+        }
+        .nav a:hover { background: var(--gray-100); color: var(--gray-800); }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .page-title {
+            font-size: 1.875rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .page-title i { color: var(--primary); }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        @media (max-width: 968px) {
+            .grid { grid-template-columns: 1fr; }
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .card h2 i { color: var(--primary); }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: #6b7280; font-size: 0.875rem; }
+        .info-value { font-weight: 600; color: var(--gray-900); }
+        
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        .status-trained { background: #d1fae5; color: #065f46; }
+        .status-untrained { background: #fee2e2; color: #991b1b; }
+        
+        .upload-area {
+            border: 2px dashed var(--gray-300);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .upload-area:hover {
+            border-color: var(--primary);
+            background: #eff6ff;
+        }
+        .upload-area.dragover {
+            border-color: var(--primary);
+            background: #dbeafe;
+        }
+        .upload-area i {
+            font-size: 2.5rem;
+            color: var(--gray-400);
+            margin-bottom: 1rem;
+        }
+        .upload-area p {
+            color: var(--gray-700);
+            font-weight: 500;
+        }
+        .upload-area small {
+            color: #6b7280;
+            display: block;
+            margin-top: 0.5rem;
+        }
+        
+        .file-input { display: none; }
+        
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.875rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+        .btn-primary:hover { background: var(--primary-dark); }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: var(--gray-100);
+            color: var(--gray-700);
+        }
+        .btn-secondary:hover { background: var(--gray-200); }
+        
+        .progress-container {
+            margin-top: 1.5rem;
+            display: none;
+        }
+        .progress-container.show { display: block; }
+        
+        .progress-bar {
+            height: 8px;
+            background: var(--gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .results-container {
+            margin-top: 1.5rem;
+            display: none;
+        }
+        .results-container.show { display: block; }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .metric-card {
+            background: var(--gray-50);
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--primary);
+        }
+        .metric-label {
+            font-size: 0.75rem;
+            color: #6b7280;
+            margin-top: 0.25rem;
+        }
+        
+        .feature-list {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .feature-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--gray-100);
+        }
+        .feature-name {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        .feature-bar {
+            width: 100px;
+            height: 6px;
+            background: var(--gray-200);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        .feature-fill {
+            height: 100%;
+            background: var(--primary);
+            border-radius: 3px;
+        }
+        .feature-value {
+            font-size: 0.75rem;
+            color: var(--gray-700);
+            margin-left: 0.5rem;
+            min-width: 50px;
+            text-align: right;
+        }
+        
+        .alert {
+            padding: 0.75rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.875rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .alert-success { background: #d1fae5; color: #065f46; border: 1px solid #a7f3d0; }
+        .alert-danger { background: #fee2e2; color: #991b1b; border: 1px solid #fecaca; }
+        .alert-info { background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .alert-warning { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        
+        .template-section {
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid var(--gray-200);
+        }
+        
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid white;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: inline-block;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="logo">
+            <i class="fas fa-shield-alt"></i>
+            <span>PhishGuard Pro Admin</span>
+        </div>
+        <nav class="nav">
+            <a href="/"><i class="fas fa-globe"></i> Public Scanner</a>
+            <a href="/admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="/admin/model" class="active"><i class="fas fa-brain"></i> Model Training</a>
+            <a href="/admin/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </header>
+
+    <div class="container">
+        <h1 class="page-title">
+            <i class="fas fa-brain"></i>
+            ML Model Training
+        </h1>
+        
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }}">
+                        <i class="fas fa-info-circle"></i>
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        <div class="grid">
+            <!-- Current Model Status -->
+            <div class="card">
+                <h2><i class="fas fa-info-circle"></i> Current Model Status</h2>
+                <div class="info-row">
+                    <span class="info-label">Status</span>
+                    <span class="info-value">
+                        {% if model_info.training_date != 'Not trained' and model_info.training_date != 'Dummy' %}
+                            <span class="status-badge status-trained">
+                                <i class="fas fa-check-circle"></i> Trained
+                            </span>
+                        {% else %}
+                            <span class="status-badge status-untrained">
+                                <i class="fas fa-times-circle"></i> Not Trained
+                            </span>
+                        {% endif %}
+                    </span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Training Date</span>
+                    <span class="info-value">{{ model_info.training_date if model_info.training_date != 'Dummy' else 'Never' }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Training Samples</span>
+                    <span class="info-value">{{ model_info.samples if model_info.samples != 'Unknown' else 0 }}</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Model Accuracy</span>
+                    <span class="info-value">
+                        {% if model_info.accuracy != 'Unknown' and model_info.accuracy %}
+                            {{ "%.2f"|format(model_info.accuracy * 100) }}%
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Upload & Train -->
+            <div class="card">
+                <h2><i class="fas fa-upload"></i> Train New Model</h2>
+                <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <p>Click to upload CSV file</p>
+                    <small>or drag and drop here</small>
+                    <small style="color: #9ca3af; margin-top: 0.25rem;">Max 16MB • Must contain 'url' and 'label' columns</small>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".csv" onchange="handleFileSelect(event)">
+                
+                <div class="template-section">
+                    <a href="/admin/api/model/download-template" class="btn btn-secondary" style="width: 100%;">
+                        <i class="fas fa-download"></i> Download CSV Template
+                    </a>
+                </div>
+                
+                <div class="progress-container" id="progressContainer">
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressMessage">Initializing...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                </div>
+                
+                <div id="uploadStatus"></div>
+            </div>
+        </div>
+
+        <!-- Training Results -->
+        <div class="card results-container" id="resultsContainer">
+            <h2><i class="fas fa-chart-bar"></i> Training Results</h2>
+            
+            <div class="metric-grid" id="metricGrid">
+                <div class="metric-card">
+                    <div class="metric-value" id="resultAccuracy">--</div>
+                    <div class="metric-label">Test Accuracy</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="resultSamples">--</div>
+                    <div class="metric-label">Total Samples</div>
+                </div>
+                <div class="metric-card">
+                    <div class="metric-value" id="resultTestSamples">--</div>
+                    <div class="metric-label">Test Samples</div>
+                </div>
+            </div>
+
+            <div id="warningContainer"></div>
+
+            <div class="grid" style="margin-top: 1.5rem;">
+                <div>
+                    <h3 style="font-size: 1rem; margin-bottom: 1rem;">Class Distribution</h3>
+                    <div class="info-row">
+                        <span class="info-label">Legitimate URLs</span>
+                        <span class="info-value" id="resultLegit">--</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Phishing URLs</span>
+                        <span class="info-value" id="resultPhishing">--</span>
+                    </div>
+                </div>
+                <div>
+                    <h3 style="font-size: 1rem; margin-bottom: 1rem;">Feature Importance</h3>
+                    <div class="feature-list" id="featureList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 1.5rem; text-align: center;">
+                <button class="btn btn-primary" onclick="location.reload()">
+                    <i class="fas fa-sync-alt"></i> Refresh Page to Use New Model
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let trainingInterval = null;
+
+        // Drag and drop
+        const uploadArea = document.getElementById('uploadArea');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                document.getElementById('fileInput').files = files;
+                handleFileSelect({ target: { files: files } });
+            }
+        });
+
+        function handleFileSelect(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            if (!file.name.endsWith('.csv')) {
+                showStatus('Only CSV files are allowed', 'danger');
+                return;
+            }
+            
+            uploadFile(file);
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            document.getElementById('progressContainer').classList.add('show');
+            document.getElementById('uploadStatus').innerHTML = '';
+            
+            fetch('/admin/api/model/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showStatus('Training started! Monitoring progress...', 'success');
+                    startProgressMonitoring();
+                } else {
+                    showStatus(data.error || 'Upload failed', 'danger');
+                    document.getElementById('progressContainer').classList.remove('show');
+                }
+            })
+            .catch(error => {
+                showStatus('Error: ' + error.message, 'danger');
+                document.getElementById('progressContainer').classList.remove('show');
+            });
+        }
+
+        function startProgressMonitoring() {
+            if (trainingInterval) clearInterval(trainingInterval);
+            
+            trainingInterval = setInterval(() => {
+                fetch('/admin/api/model/progress')
+                    .then(response => response.json())
+                    .then(data => {
+                        updateProgress(data);
+                        
+                        if (!data.is_training && data.progress === 100) {
+                            clearInterval(trainingInterval);
+                            showResults(data.last_result);
+                        } else if (!data.is_training && data.error) {
+                            clearInterval(trainingInterval);
+                            showStatus(data.message, 'danger');
+                            document.getElementById('progressContainer').classList.remove('show');
+                        }
+                    });
+            }, 1000);
+        }
+
+        function updateProgress(data) {
+            const fill = document.getElementById('progressFill');
+            const message = document.getElementById('progressMessage');
+            const percent = document.getElementById('progressPercent');
+            
+            fill.style.width = data.progress + '%';
+            message.textContent = data.message || 'Processing...';
+            percent.textContent = data.progress + '%';
+        }
+
+        function showResults(result) {
+            if (!result || !result.success) return;
+            
+            document.getElementById('resultsContainer').classList.add('show');
+            
+            // Handle both decimal (0.95) and percentage (95) formats
+            let accuracy = result.accuracy;
+            if (accuracy <= 1) accuracy = accuracy * 100;
+            document.getElementById('resultAccuracy').textContent = accuracy.toFixed(2) + '%';
+            
+            document.getElementById('resultSamples').textContent = result.samples;
+            document.getElementById('resultTestSamples').textContent = result.test_samples;
+            document.getElementById('resultLegit').textContent = result.legitimate;
+            document.getElementById('resultPhishing').textContent = result.phishing;
+            
+            // Clear previous warnings
+            const warningContainer = document.getElementById('warningContainer');
+            warningContainer.innerHTML = '';
+            
+            // Add warning if accuracy is 100% (overfitting)
+            if (accuracy >= 99.99) {
+                const warnDiv = document.createElement('div');
+                warnDiv.className = 'alert alert-warning';
+                warnDiv.innerHTML = `
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Warning:</strong> 100% test accuracy detected! This may indicate overfitting. 
+                    The model may not generalize well to new data.
+                `;
+                warningContainer.appendChild(warnDiv);
+            }
+            
+            // Show cross-validation accuracy if available (more realistic)
+            if (result.cv_accuracy) {
+                let cvAcc = result.cv_accuracy <= 1 ? result.cv_accuracy * 100 : result.cv_accuracy;
+                let cvStd = result.cv_std <= 1 ? result.cv_std * 100 : result.cv_std;
+                
+                const cvDiv = document.createElement('div');
+                cvDiv.className = 'metric-card';
+                cvDiv.style.background = '#dbeafe';  // Blue background
+                cvDiv.innerHTML = `
+                    <div class="metric-value" style="color: #1e40af;">${cvAcc.toFixed(2)}%</div>
+                    <div class="metric-label">Cross-Validation (±${cvStd.toFixed(1)}%)</div>
+                `;
+                document.getElementById('metricGrid').appendChild(cvDiv);
+                
+                // Add info about realistic accuracy
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'alert alert-info';
+                infoDiv.style.marginTop = '1rem';
+                infoDiv.innerHTML = `
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Note:</strong> Cross-validation accuracy (${cvAcc.toFixed(1)}%) is a more realistic 
+                    estimate of performance on new, unseen URLs than test accuracy.
+                `;
+                warningContainer.appendChild(infoDiv);
+            }
+            
+            // Feature importance
+            const featureList = document.getElementById('featureList');
+            featureList.innerHTML = '';
+            
+            if (result.feature_importance) {
+                const sorted = Object.entries(result.feature_importance)
+                    .sort((a, b) => b[1] - a[1]);
+                
+                sorted.forEach(([name, value]) => {
+                    const div = document.createElement('div');
+                    div.className = 'feature-item';
+                    div.innerHTML = `
+                        <span class="feature-name">${name.replace(/_/g, ' ')}</span>
+                        <div style="display: flex; align-items: center;">
+                            <div class="feature-bar">
+                                <div class="feature-fill" style="width: ${value * 100}%"></div>
+                            </div>
+                            <span class="feature-value">${(value * 100).toFixed(1)}%</span>
+                        </div>
+                    `;
+                    featureList.appendChild(div);
+                });
+            }
+        }
+
+        function showStatus(message, type) {
+            const div = document.createElement('div');
+            div.className = `alert alert-${type}`;
+            div.innerHTML = `<i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i> ${message}`;
+            document.getElementById('uploadStatus').appendChild(div);
+            
+            setTimeout(() => div.remove(), 5000);
+        }
+
+        // Load initial status
+        fetch('/admin/api/model/status')
+            .then(response => response.json())
+            .then(data => {
+                if (data.training_status.last_result && data.training_status.last_result.success) {
+                    showResults(data.training_status.last_result);
+                }
+            });
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+{
+  "scans": [
+    {
+      "type": "url",
+      "input": "https://microsoft-security-update.azurewebsites.net",
+      "result": "HIGH",
+      "score": 93,
+      "confidence": 0.8,
+      "verdict": "PHISHING DETECTED: This URL appears to be impersonating a trusted brand. Do not enter credentials.",
+      "reasons": [
+        "Microsoft appears in subdomain 'microsoft-security-update' but not in registered domain 'azurewebsites.net'",
+        "Security keywords on non-security site: security"
+      ],
+      "timestamp": "2026-04-06T12:32:08.384471",
+      "id": "9500fea50909a109"
+    },
+    {
+      "type": "url",
+      "input": "http://103.21.244.10/verify-account",
+      "result": "HIGH",
+      "score": 99,
+      "confidence": 0.85,
+      "verdict": "PHISHING DETECTED: This URL appears to be impersonating a trusted brand. Do not enter credentials.",
+      "reasons": [
+        "Account in URL path on unrelated domain",
+        "URL uses IP address instead of domain name - common in phishing",
+        "Security keywords on non-security site: verify"
+      ],
+      "timestamp": "2026-04-06T12:23:47.551342",
+      "id": "28483004e41c2c24"
+    },
+    {
+      "type": "url",
+      "input": "http://secure-login%2Eamazon.com.fake-site.tk",
+      "result": "HIGH",
+      "score": 100,
+      "confidence": 0.85,
+      "verdict": "PHISHING DETECTED: This URL appears to be impersonating a trusted brand. Do not enter credentials.",
+      "reasons": [
+        "Amazon appears in subdomain 'secure-login%2eamazon.com' but not in registered domain 'fake-site.tk'",
+        "Security keywords on non-security site: secure",
+        "Credential harvesting context: login"
+      ],
+      "timestamp": "2026-04-06T12:14:12.356842",
+      "id": "c4977b878fbac227"
+    },
+    {
+      "type": "url",
+      "input": "http://arnazon-login.com",
+      "result": "HIGH",
+      "score": 100,
+      "confidence": 0.6,
+      "verdict": "HIGH RISK: Multiple suspicious indicators detected. Avoid this URL.",
+      "reasons": [
+        "Machine learning model 100.0% confident of phishing"
+      ],
+      "timestamp": "2026-04-06T12:13:29.851506",
+      "id": "251bb1220278e986"
+    },
+    {
+      "type": "url",
+      "input": "http://google.login.account-recovery.support",
+      "result": "HIGH",
+      "score": 100,
+      "confidence": 0.85,
+      "verdict": "PHISHING DETECTED: This URL appears to be impersonating a trusted brand. Do not enter credentials.",
+      "reasons": [
+        "Google appears in subdomain 'google.login' but not in registered domain 'account-recovery.support'",
+        "Credential harvesting context: login",
+        "Machine learning model 100.0% confident of phishing"
+      ],
+      "timestamp": "2026-04-06T12:12:59.448310",
+      "id": "075869e5de8bf3e2"
+    },
+    {
+      "type": "url",
+      "input": "https://microsoft-security-update.azurewebsites.net",
+      "result": "HIGH",
+      "score": 100,
+      "confidence": 0.75,
+      "verdict": "PHISHING DETECTED: This URL appears to be impersonating a trusted brand. Do not enter credentials.",
+      "reasons": [
+        "Microsoft appears in subdomain 'microsoft-security-update' but not in registered domain 'azurewebsites.net'",
+        "Security keywords on non-security site: security"
+      ],
+      "timestamp": "2026-04-06T11:57:19.797660",
+      "id": "bfbc6b8ca6ac2bb4"
+    }
+  ],
+  "users": [],
+  "settings": {
+    "ml_enabled": true,
+    "threat_intel_enabled": true,
+    "auto_update": true,
+    "notification_email": ""
+  },
+  "blacklist": [],
+  "whitelist": []
+}

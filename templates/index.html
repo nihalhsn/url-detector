@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhishGuard Pro - SOC-Grade URL Analysis</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        :root {
+            --primary: #2563eb; --primary-dark: #1d4ed8;
+            --success: #10b981; --success-light: #d1fae5;
+            --warning: #f59e0b; --warning-light: #fef3c7;
+            --danger: #ef4444; --danger-light: #fee2e2;
+            --info: #3b82f6; --info-light: #dbeafe;
+            --gray-50: #f9fafb; --gray-100: #f3f4f6; --gray-200: #e5e7eb;
+            --gray-700: #374151; --gray-800: #1f2937; --gray-900: #111827;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--gray-50);
+            color: var(--gray-800);
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: white;
+            border-bottom: 1px solid var(--gray-200);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo { 
+            display: flex; 
+            align-items: center; 
+            gap: 0.75rem; 
+            font-size: 1.25rem; 
+            font-weight: 700; 
+        }
+        
+        .logo-icon {
+            width: 40px; 
+            height: 40px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            border-radius: 10px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: white; 
+            font-size: 1.25rem;
+        }
+        
+        .badge-soc {
+            background: var(--gray-800);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+        
+        .admin-link {
+            color: var(--gray-700);
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+        
+        .admin-link:hover { 
+            background: var(--gray-100); 
+            color: var(--primary);
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .hero {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .hero h1 {
+            font-size: clamp(1.5rem, 5vw, 2rem);
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+            font-weight: 800;
+        }
+        
+        .hero p {
+            color: var(--gray-700);
+            font-size: clamp(0.875rem, 2.5vw, 1rem);
+        }
+        
+        .scanner-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .input-group { margin-bottom: 1.5rem; }
+        
+        .input-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 0.5rem;
+        }
+        
+        .input-wrapper {
+            display: flex;
+            gap: 0.75rem;
+        }
+        
+        .input-field {
+            flex: 1;
+            padding: 1rem 1.25rem;
+            border: 2px solid var(--gray-200);
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            min-width: 0;
+        }
+        
+        .input-field:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 4px rgba(37,99,235,0.1);
+        }
+
+        .btn-scan {
+            padding: 1rem 2rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-family: 'Inter', sans-serif;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        
+        .btn-scan:hover { background: var(--primary-dark); }
+        .btn-scan:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Layered Results Display */
+        .result-container {
+            display: none;
+            margin-top: 2rem;
+            animation: slideIn 0.4s ease;
+        }
+        
+        .result-container.show { display: block; }
+        
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Verdict Banner */
+        .verdict-banner {
+            padding: 1.5rem;
+            border-radius: 12px;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+        
+        .verdict-banner.minimal {
+            background: var(--success-light);
+            border: 2px solid var(--success);
+        }
+        
+        .verdict-banner.low {
+            background: var(--info-light);
+            border: 2px solid var(--info);
+        }
+        
+        .verdict-banner.medium {
+            background: var(--warning-light);
+            border: 2px solid var(--warning);
+        }
+        
+        .verdict-banner.high {
+            background: var(--danger-light);
+            border: 2px solid var(--danger);
+        }
+        
+        .verdict-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        
+        .verdict-banner.minimal .verdict-icon {
+            background: var(--success);
+            color: white;
+        }
+        
+        .verdict-banner.low .verdict-icon {
+            background: var(--info);
+            color: white;
+        }
+        
+        .verdict-banner.medium .verdict-icon {
+            background: var(--warning);
+            color: white;
+        }
+        
+        .verdict-banner.high .verdict-icon {
+            background: var(--danger);
+            color: white;
+        }
+        
+        .verdict-content h2 {
+            font-size: clamp(1.125rem, 4vw, 1.25rem);
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .verdict-banner.minimal .verdict-content h2 { color: #065f46; }
+        .verdict-banner.low .verdict-content h2 { color: #1e40af; }
+        .verdict-banner.medium .verdict-content h2 { color: #92400e; }
+        .verdict-banner.high .verdict-content h2 { color: #991b1b; }
+        
+        .verdict-meta {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .verdict-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        
+        .risk-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+        
+        .risk-badge.minimal { background: var(--success); color: white; }
+        .risk-badge.low { background: var(--info); color: white; }
+        .risk-badge.medium { background: var(--warning); color: white; }
+        .risk-badge.high { background: var(--danger); color: white; }
+
+        /* Domain Analysis Card */
+        .domain-card {
+            background: var(--gray-50);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .domain-card h3 {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--gray-700);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        
+        .domain-structure {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+        
+        .domain-part {
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            background: white;
+            border: 1px solid var(--gray-200);
+        }
+        
+        .domain-part.subdomain { color: var(--warning); border-color: var(--warning); }
+        .domain-part.domain { color: var(--primary); border-color: var(--primary); font-weight: 600; }
+        .domain-part.suffix { color: var(--gray-700); border-color: var(--gray-300); }
+
+        /* Threat Factors */
+        .factors-section {
+            margin-bottom: 1.5rem;
+        }
+        
+        .factors-section h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .factor-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1rem;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--gray-200);
+        }
+        
+        .factor-item.critical { border-left-color: var(--danger); }
+        .factor-item.high { border-left-color: #f97316; }
+        .factor-item.medium { border-left-color: var(--warning); }
+        .factor-item.low { border-left-color: var(--info); }
+        
+        .factor-severity {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+            color: white;
+            flex-shrink: 0;
+        }
+        
+        .factor-severity.critical { background: var(--danger); }
+        .factor-severity.high { background: #f97316; }
+        .factor-severity.medium { background: var(--warning); }
+        .factor-severity.low { background: var(--info); }
+        
+        .factor-content { flex: 1; }
+        
+        .factor-title {
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+        
+        .factor-desc {
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        
+        .factor-weight {
+            font-size: 0.75rem;
+            color: var(--gray-500);
+            margin-top: 0.25rem;
+        }
+
+        /* Recommendations */
+        .recommendations-card {
+            background: var(--gray-800);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+        }
+        
+        .recommendations-card h3 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .recommendation-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .recommendation-item:last-child { border-bottom: none; }
+        
+        .recommendation-item i {
+            color: var(--warning);
+            margin-top: 0.125rem;
+        }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(255,255,255,0.95);
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 100;
+            padding: 1rem;
+        }
+        
+        .loading-overlay.show { display: flex; }
+        
+        .spinner {
+            width: 56px;
+            height: 56px;
+            border: 4px solid var(--gray-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin { to { transform: rotate(360deg); } }
+        
+        .loading-text {
+            margin-top: 1rem;
+            color: var(--gray-700);
+            font-weight: 500;
+            text-align: center;
+        }
+        
+        .loading-layers {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--gray-500);
+            text-align: center;
+        }
+
+        /* Layer Indicators */
+        .layer-indicators {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1.5rem;
+            justify-content: center;
+        }
+        
+        .layer-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--gray-300);
+            transition: all 0.3s;
+        }
+        
+        .layer-dot.active { background: var(--primary); transform: scale(1.2); }
+        .layer-dot.complete { background: var(--success); }
+
+        /* Mobile Responsive Styles */
+        @media (max-width: 768px) {
+            .header {
+                padding: 1rem;
+            }
+            
+            .logo {
+                font-size: 1.1rem;
+            }
+            
+            .logo-icon {
+                width: 36px;
+                height: 36px;
+                font-size: 1.1rem;
+            }
+            
+            .badge-soc {
+                display: none;
+            }
+            
+            .admin-link span {
+                display: none;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .scanner-card {
+                padding: 1.5rem 1rem;
+                border-radius: 12px;
+            }
+            
+            .input-wrapper {
+                flex-direction: column;
+            }
+            
+            .btn-scan {
+                width: 100%;
+                justify-content: center;
+                padding: 1rem;
+            }
+            
+            .verdict-banner {
+                flex-direction: column;
+                text-align: center;
+                padding: 1.25rem;
+            }
+            
+            .verdict-icon {
+                margin: 0 auto;
+            }
+            
+            .verdict-meta {
+                justify-content: center;
+                gap: 1rem;
+            }
+            
+            .domain-structure {
+                font-size: 0.75rem;
+            }
+            
+            .domain-part {
+                padding: 0.375rem 0.5rem;
+            }
+            
+            .factor-item {
+                padding: 0.875rem;
+            }
+            
+            .recommendations-card {
+                padding: 1.25rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .hero {
+                margin-bottom: 1.5rem;
+            }
+            
+            .scanner-card {
+                padding: 1.25rem 0.875rem;
+            }
+            
+            .verdict-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: center;
+            }
+            
+            .verdict-meta-item {
+                font-size: 0.8125rem;
+            }
+            
+            .domain-card {
+                padding: 1.25rem;
+            }
+            
+            .layer-indicators {
+                gap: 0.375rem;
+            }
+            
+            .layer-dot {
+                width: 6px;
+                height: 6px;
+            }
+        }
+        
+        /* Touch-friendly improvements */
+        @media (hover: none) and (pointer: coarse) {
+            .btn-scan {
+                min-height: 48px;
+            }
+            
+            .admin-link {
+                min-height: 44px;
+                min-width: 44px;
+                justify-content: center;
+            }
+            
+            .input-field {
+                font-size: 16px; /* Prevents zoom on iOS */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Running Layered Security Analysis...</div>
+        <div class="loading-layers" id="loadingLayers">Initializing</div>
+        <div class="layer-indicators" id="layerIndicators">
+            <div class="layer-dot" id="layer1"></div>
+            <div class="layer-dot" id="layer2"></div>
+            <div class="layer-dot" id="layer3"></div>
+            <div class="layer-dot" id="layer4"></div>
+            <div class="layer-dot" id="layer5"></div>
+            <div class="layer-dot" id="layer6"></div>
+        </div>
+    </div>
+
+    <header class="header">
+        <div class="logo">
+            <div class="logo-icon">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <span>PhishGuard Pro</span>
+            <span class="badge-soc">SOC-GRADE</span>
+        </div>
+        <a href="/admin/login" class="admin-link">
+            <i class="fas fa-lock"></i>
+            <span>Admin</span>
+        </a>
+    </header>
+
+    <main class="main-content">
+        <div class="hero">
+            <h1>Layered URL Threat Detection</h1>
+            <p>Comprehensive URL threat analysis delivering accurate and actionable security insights</p>
+        </div>
+        
+        <div class="scanner-card">
+            <div class="input-group">
+                <label class="input-label">Enter URL for Security Analysis</label>
+                <div class="input-wrapper">
+                    <input type="text" id="urlInput" class="input-field" placeholder="https://example.com/login">
+                    <button class="btn-scan" onclick="analyzeURL()" id="analyzeBtn">
+                        <i class="fas fa-search"></i>
+                        Analyze
+                    </button>
+                </div>
+            </div>
+            
+            <div class="result-container" id="resultContainer">
+                <!-- Results injected here -->
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const layerNames = [
+            'URL Parser',
+            'Brand Impersonation',
+            'Structure Analysis',
+            'Keyword Context',
+            'ML Prediction',
+            'Threat Intelligence'
+        ];
+        
+        function updateLoadingLayer(layerIndex) {
+            document.getElementById('loadingLayers').textContent = 
+                `Layer ${layerIndex + 1}/6: ${layerNames[layerIndex]}`;
+            
+            for (let i = 1; i <= 6; i++) {
+                const dot = document.getElementById(`layer${i}`);
+                dot.classList.remove('active', 'complete');
+                if (i < layerIndex + 1) {
+                    dot.classList.add('complete');
+                } else if (i === layerIndex + 1) {
+                    dot.classList.add('active');
+                }
+            }
+        }
+        
+        async function analyzeURL() {
+            const url = document.getElementById('urlInput').value.trim();
+            if (!url) {
+                alert('Please enter a URL');
+                return;
+            }
+            
+            document.getElementById('loadingOverlay').classList.add('show');
+            document.getElementById('resultContainer').classList.remove('show');
+            
+            // Simulate layer progression
+            for (let i = 0; i < 6; i++) {
+                updateLoadingLayer(i);
+                await new Promise(r => setTimeout(r, 400));
+            }
+            
+            try {
+                const response = await fetch('/scan_url', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url })
+                });
+                
+                const data = await response.json();
+                displayResults(data);
+            } catch (error) {
+                displayResults({
+                    risk_level: 'ERROR',
+                    verdict: 'Analysis failed: ' + error.message,
+                    score: 0,
+                    confidence: 0
+                });
+            } finally {
+                document.getElementById('loadingOverlay').classList.remove('show');
+            }
+        }
+        
+        function displayResults(data) {
+            const container = document.getElementById('resultContainer');
+            const level = data.risk_level?.toLowerCase() || 'minimal';
+            
+            const iconMap = {
+                'minimal': 'check-circle',
+                'low': 'info-circle',
+                'medium': 'exclamation-triangle',
+                'high': 'exclamation-circle',
+                'error': 'times-circle'
+            };
+            
+            const factorsHtml = data.all_factors?.map(f => `
+                <div class="factor-item ${f.severity.toLowerCase()}">
+                    <div class="factor-severity ${f.severity.toLowerCase()}">
+                        <i class="fas fa-${f.severity === 'CRITICAL' ? 'times' : f.severity === 'HIGH' ? 'exclamation' : 'minus'}"></i>
+                    </div>
+                    <div class="factor-content">
+                        <div class="factor-title">${f.factor}</div>
+                        <div class="factor-desc">${f.description}</div>
+                        <div class="factor-weight">Layer: ${f.layer} • Risk Weight: ${f.weight}</div>
+                    </div>
+                </div>
+            `).join('') || '';
+            
+            const recommendationsHtml = data.recommendations?.map(r => `
+                <div class="recommendation-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>${r}</span>
+                </div>
+            `).join('') || '';
+            
+            const domain = data.domain_info || {};
+            
+            container.innerHTML = `
+                <div class="verdict-banner ${level}">
+                    <div class="verdict-icon">
+                        <i class="fas fa-${iconMap[level] || 'question'}"></i>
+                    </div>
+                    <div class="verdict-content">
+                        <h2>${data.verdict || 'Analysis Complete'}</h2>
+                        <p>${data.reasons?.[0] || ''}</p>
+                        <div class="verdict-meta">
+                            <div class="verdict-meta-item">
+                                <span class="risk-badge ${level}">${data.risk_level}</span>
+                            </div>
+                            <div class="verdict-meta-item">
+                                <i class="fas fa-chart-bar"></i>
+                                Risk Score: ${data.score}/100
+                            </div>
+                            <div class="verdict-meta-item">
+                                <i class="fas fa-bullseye"></i>
+                                Confidence: ${(data.confidence * 100).toFixed(1)}%
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="domain-card">
+                    <h3><i class="fas fa-sitemap"></i> URL Structure Analysis</h3>
+                    <div class="domain-structure">
+                        ${domain.subdomain ? `<span class="domain-part subdomain">${domain.subdomain}.</span>` : ''}
+                        <span class="domain-part domain">${domain.domain || 'unknown'}</span>
+                        <span class="domain-part suffix">.${domain.suffix || 'unknown'}</span>
+                    </div>
+                    <div style="margin-top: 0.75rem; font-size: 0.875rem; color: var(--gray-600);">
+                        Registered Domain: <strong>${domain.registered_domain || 'N/A'}</strong>
+                    </div>
+                </div>
+                
+                ${factorsHtml ? `
+                <div class="factors-section">
+                    <h3><i class="fas fa-layer-group"></i> Detection Factors (${data.all_factors?.length || 0} indicators)</h3>
+                    ${factorsHtml}
+                </div>
+                ` : ''}
+                
+                ${recommendationsHtml ? `
+                <div class="recommendations-card">
+                    <h3><i class="fas fa-user-shield"></i> Security Recommendations</h3>
+                    ${recommendationsHtml}
+                </div>
+                ` : ''}
+            `;
+            
+            container.classList.add('show');
+        }
+        
+        document.getElementById('urlInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') analyzeURL();
+        });
+    </script>
+</body>
+</html>
