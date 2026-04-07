@@ -1,3 +1,5 @@
+from dotenv import load_dotenv
+load_dotenv()
 from flask import Flask, request, jsonify, render_template, session, redirect, url_for, flash
 from functools import wraps
 import whois
@@ -34,11 +36,11 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 # ============ CONFIGURATION ============
 CONFIG = {
     'VIRUSTOTAL_API_KEY': os.environ.get('VIRUSTOTAL_API_KEY', ''),
-    'GOOGLE_SAFE_BROWSING_API_KEY': os.environ.get('GSB_API_KEY', ''),
+    'GSB_API_KEY': os.environ.get('GSB_API_KEY', ''),
     'PHISHTANK_API_URL': 'http://data.phishtank.com/data/online-valid.json',
     'ML_MODEL_PATH': os.path.join(os.path.dirname(os.path.abspath(__file__)), 'phishing_model.pkl'),
     'ADMIN_USERNAME': os.environ.get('ADMIN_USER', 'admin'),
-    'ADMIN_PASSWORD_HASH': os.environ.get('ADMIN_PASS_HASH', hashlib.sha256('admin123'.encode()).hexdigest()),
+    'ADMIN_PASSWORD_HASH': os.environ.get('ADMIN_PASS_HASH'),
     'MAX_LOGIN_ATTEMPTS': 5,
     'LOGIN_LOCKOUT_MINUTES': 30,
     'SESSION_TIMEOUT_MINUTES': 60,
@@ -1351,14 +1353,30 @@ class Database:
     def get_stats(self):
         scans = self.data['scans']
         total = len(scans)
+
         if total == 0:
-            return {'total': 0, 'safe': 0, 'suspicious': 0, 'malicious': 0, 'safe_pct': 0, 'suspicious_pct': 0, 'malicious_pct': 0}
-        safe = sum(1 for s in scans if s.get('result') == 'Safe')
-        suspicious = sum(1 for s in scans if s.get('result') == 'Suspicious')
-        malicious = sum(1 for s in scans if s.get('result') == 'Malicious')
+            return {
+                'total': 0,
+                'safe': 0,
+                'suspicious': 0,
+                'malicious': 0,
+                'safe_pct': 0,
+                'suspicious_pct': 0,
+                'malicious_pct': 0
+            }
+
+        safe = sum(1 for s in scans if s.get('result') in ['LOW', 'MINIMAL'])
+        suspicious = sum(1 for s in scans if s.get('result') == 'MEDIUM')
+        malicious = sum(1 for s in scans if s.get('result') == 'HIGH')
+
         return {
-            'total': total, 'safe': safe, 'suspicious': suspicious, 'malicious': malicious,
-            'safe_pct': round(safe/total*100, 1), 'suspicious_pct': round(suspicious/total*100, 1), 'malicious_pct': round(malicious/total*100, 1)
+            'total': total,
+            'safe': safe,
+            'suspicious': suspicious,
+            'malicious': malicious,
+            'safe_pct': round(safe/total*100, 1),
+            'suspicious_pct': round(suspicious/total*100, 1),
+            'malicious_pct': round(malicious/total*100, 1)
         }
 
     def get_recent_scans(self, limit=50):
